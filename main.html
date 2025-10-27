@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>BOTW - All Main Catégories Leaderboard</title>
+  <title>BOTW - All Main Categories Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
 /* ===== Global Styles ===== */
@@ -217,7 +217,7 @@ th.non-clickable:hover {
 <body>
 
 <h1>Breath Of The Wild</h1>
-<h2>All Main Catégories - Leaderboard</H2>
+<h2>All Main Categories - Leaderboard</H2>
 <div id="count">Loading...</div>
 <p id="status"></p>
 <input id="search" type="text" placeholder="Search for a player…">
@@ -229,7 +229,7 @@ th.non-clickable:hover {
   <p><b>Categories played:</b></p>
   <pre>
 expComponent_i = exp((WR_i / PB_i) - 1)
-weighted_i = R_total_i × expComponent_i
+weighted_i = expComponent_i
   </pre>
   <ul>
     <li><b>WR_i</b> = current World Record in category i</li>
@@ -538,4 +538,5 @@ fetchPlayersWithRanks().catch(err => {
 
 </body>
 </html>
+
 
