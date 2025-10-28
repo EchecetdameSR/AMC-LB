@@ -2,224 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>BOTW - All Main Catégories Leaderboard</title>
+  <title>BOTW - All Main Categories Leaderboard</title>
+  <link rel="icon" type="image/png" href="main.png">
+  <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-/* ===== Global Styles ===== */
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #1e1e2f;
-  color: #ddd;
-  margin: 0;
-  padding: 2rem;
-}
-
-h1 {
-  font-size: 2rem;
-  margin-bottom: 0.1rem;
-  color: #fff;
-  text-align: center;
-}
-h2 {
-  font-size: 1.5rem;
-  margin-top: 0.3rem;
-  color: #fff;
-  text-align: center;
-}
-
-/* ===== Controls Container ===== */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  gap: 0.5rem;
-}
-
-#count {
-  font-size: 1rem;
-  color: #aaa;
-}
-
-#status {
-  font-size: 0.95rem;
-  color: #888;
-  margin-top: 0.25rem;
-}
-
-#search {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #444;
-  background: #2e2e44;
-  color: #fff;
-  outline: none;
-  flex: 1 1 200px;
-  max-width: 300px;
-  transition: 0.2s;
-}
-
-#search:focus {
-  border-color: #00aaff;
-  box-shadow: 0 0 5px #00aaff44;
-}
-
-/* ===== Rank Explanation Button ===== */
-#rankInfoButton {
-  background: #00aaff;
-  color: #1e1e2f;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-  font-weight: bold;
-}
-
-#rankInfoButton:hover {
-  background: #0088cc;
-}
-
-#rankInfoText {
-  display: none;
-  background: #2a2a3d;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  color: #ccc;
-  line-height: 1.5;
-}
-
-#rankInfoText b {
-  color: #00aaff;
-}
-
-/* ===== Table Styles ===== */
-.table-container {
-  overflow-x: auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px #0008;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 900px;
-}
-
-th, td {
-  padding: 0.6rem;
-  text-align: center;
-  border-bottom: 1px solid #444;
-  user-select: none;
-  font-size: 0.95rem;
-  word-wrap: break-word;
-  vertical-align: middle;
-}
-
-th {
-  background: #222244;
-  color: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-th:hover {
-  background: #000055;
-}
-
-td a {
-  color: #00aaff;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-td a:hover {
-  text-decoration: underline;
-}
-
-/* Alternating row colors */
-tr:nth-child(even) { background: #2a2a3d; }
-tr:nth-child(odd) { background: #222238; }
-
-tr:hover { background: #33335a; }
-
-/* Sorted column */
-th.sorted { background: #005f99; }
-td.sorted { background: #004466; }
-
-
-/* ===== Rank Explanation Toggle ===== */
-#rankInfoBtn {
-  background: #00aaff;
-  color: #1e1e2f;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: background 0.2s, transform 0.1s;
-}
-
-#rankInfoBtn:hover {
-  background: #0088cc;
-  transform: translateY(-1px);
-}
-
-#rankInfoBtn:active {
-  transform: translateY(0);
-}
-
-#rankInfoText {
-  display: none;
-  background: #2a2a3d;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 0.5rem;
-  color: #ccc;
-  line-height: 1.5;
-  transition: max-height 0.3s ease, opacity 0.3s ease;
-  overflow: hidden;
-}
-
-#rankInfoText.show {
-  display: block;
-}
-
-
-/* Non-clickable headers */
-th.non-clickable {
-  cursor: default;
-  background: #222244; /* garde le même style */
-}
-
-th.non-clickable:hover {
-  background: #222244; /* pas de surbrillance */
-}
-
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  th, td { font-size: 0.85rem; padding: 0.4rem; }
-  #search { max-width: 200px; flex: 1 1 100%; }
-  .controls { flex-direction: column; align-items: flex-start; }
-}
-  </style>
 </head>
 <body>
-
+<div id="loading-bar-container"><div id="loading-bar"></div></div>
 <h1>Breath Of The Wild</h1>
-<h2>All Main Catégories - Leaderboard</H2>
-<div id="count">Loading...</div>
-<p id="status"></p>
+<h2>All Main Categories - Leaderboard</H2>
+<div id="credit">by Echecetdame & Ram (Thx AI for the JS lul)</div>
+<div id="count"></div>
 <input id="search" type="text" placeholder="Search for a player…">
 
 <button id="rankInfoBtn">How Rank (%) is Calculated</button>
@@ -260,14 +53,13 @@ Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
 
   <p>This system rewards players who are versatile, slightly penalizes skipped categories, and dynamically adapts to changes in WRs or runner numbers.</p>
 </div>
-
 <p></p>
-
 <table>
   <thead>
     <tr>
       <th class="non-clickable">Rank</th>
       <th class="non-clickable">Player</th>
+      <th class="non-clickable">Compare</th>
       <th>Any%</th>
       <th>All Dungeons</th>
       <th>All Main Quests</th>
@@ -284,258 +76,26 @@ Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
   </thead>
   <tbody id="list"></tbody>
 </table>
-
-<script>
-// Toggle Rank Explanation
-const rankBtn = document.getElementById("rankInfoBtn");
-const rankText = document.getElementById("rankInfoText");
-rankBtn.addEventListener("click", () => {
-  rankText.style.display = rankText.style.display === "block" ? "none" : "block";
-});
-
-const list = document.getElementById("list");
-const status = document.getElementById("status");
-const count = document.getElementById("count");
-const searchInput = document.getElementById("search");
-
-const gameId = "76rqjqd8";
-
-const categoryIds = [
-  "vdoq4xvk",  // Any%
-  "9d8jgv7k",  // All Dungeons
-  "n2yj3r82",  // All Main Quests
-  "wkpqmw8d",  // All Shrines
-  "xk9jv4gd",  // 100%
-  "5dw69v02",  // Best Ending
-  "02q8pz92",  // Master Sword
-  "02q8pz92",  // Master Sword Restricted
-  "w20193jk",  // Master Sword and Dungeons
-  "9kvmy40k",  // Great Plateau Any%
-  "rklqj4w2"   // Great Plateau 100%
-];
-
-const categoryNames = [
-  "Any%",
-  "All Dungeons",
-  "All Main Quests",
-  "All Shrines",
-  "100%",
-  "Best Ending",
-  "Master Sword",
-  "Master Sword Restricted",
-  "Master Sword and Dungeons",
-  "Great Plateau Any%",
-  "Great Plateau 100%",
-];
-
-const masterSwordSubcats = [
-  { id: "02q8pz92", name: "Master Sword", varId: "wl334xol", value: "5lem8wz1" },
-  { id: "02q8pz92", name: "Master Sword Restricted", varId: "wl334xol", value: "0q5g80nl" }
-];
-
-let allPlayers = [];
-let totalRunnersByCat = {};
-let WRsByCat = {};
-let currentSortedCol = null;
-
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Erreur ${res.status}: ${url}`);
-  return res.json();
-}
-
-async function fetchLeaderboard(catId, catName, playersMap, varId=null, valueId=null) {
-  let offset = 0;
-  const max = 200;
-  let more = true;
-  let catRuns = [];
-  let lb = { data: { runs: [], players: { data: [] } } };
-
-  while (more) {
-    status.textContent = `Catégorie : ${catName} (offset ${offset})`;
-    let url = `https://www.speedrun.com/api/v1/leaderboards/${gameId}/category/${catId}?embed=players&max=${max}&offset=${offset}`;
-    if (varId && valueId) url += `&var-${varId}=${valueId}`;
-
-    const tmp = await fetchJson(url);
-    if (!tmp || !tmp.data || !tmp.data.runs) break;
-    lb = tmp;
-    catRuns = catRuns.concat(lb.data.runs);
-    offset += max;
-    more = lb.data.runs.length === max;
-  }
-
-  WRsByCat[catName] = catRuns?.[0]?.run?.times?.primary_t || 1;
-  totalRunnersByCat[catName] = lb.data?.players?.data?.length || catRuns.length || 1;
-
-  const playerLookup = {};
-  for (const p of lb.data?.players?.data || []) {
-    const id = p.id;
-    const name = p.names?.international || p.name || id;
-    const link = p.weblink || (id ? `https://www.speedrun.com/user/${id}` : null);
-    playerLookup[id] = { name, link };
-  }
-
-  for (const runEntry of catRuns) {
-    const runPlayers = runEntry.run?.players || [];
-    for (const p of runPlayers) {
-      const id = p.id || "guest:" + (p.name || "unknown");
-      if (!playersMap.has(id)) {
-        const info = playerLookup[id] || { name: p.name || id, link: p.weblink || null };
-        playersMap.set(id, { name: info.name, link: info.link, ranks: {} });
-      }
-      const playerData = playersMap.get(id);
-      if (!playerData.ranks[catName] && runEntry.place != null) {
-        playerData.ranks[catName] = { place: runEntry.place, time: runEntry.run.times.primary_t };
-      }
-    }
-  }
-}
-
-async function fetchPlayersWithRanks() {
-  const playersMap = new Map();
-
-  for (let c=0; c<categoryIds.length; c++) {
-    const catId = categoryIds[c];
-    const catName = categoryNames[c];
-
-    if (catId === "02q8pz92") {
-      for (const sc of masterSwordSubcats) {
-        await fetchLeaderboard(sc.id, sc.name, playersMap, sc.varId, sc.value);
-      }
-    }
-
-    if (!masterSwordSubcats.some(sc => sc.name === catName)) {
-      await fetchLeaderboard(catId, catName, playersMap);
-    }
-  }
-
-  allPlayers = Array.from(playersMap.values());
-
-  allPlayers.forEach(p => p.rankPercent = computeRankPercent(p));
-  allPlayers.sort((a,b) => b.rankPercent - a.rankPercent);
-  allPlayers.forEach((p,i) => p.globalRank = i + 1);
-
-  updateDisplay(allPlayers);
-  count.textContent = `${allPlayers.length} runners found`;
-  status.textContent = "Loading complete.";
-}
-
-function formatTime(seconds) {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${hrs.toString().padStart(2,"0")}:${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
-}
-
-function computeRankPercent(player) {
-  let sumWeighted = 0;
-  let sumWeights = 0;
-
-  // Total de tous les runners sur toutes les catégories (compte doublons)
-  const R_total_total = Object.values(totalRunnersByCat).reduce((a, b) => a + b, 0);
-
-  // Catégories réellement run par le joueur
-  const runCats = categoryNames.filter(cat => player.ranks?.[cat]?.time != null);
-  const sumR_total_i = runCats.reduce((sum, cat) => sum + (totalRunnersByCat[cat] || 0), 0);
-
-  // Moyenne pondérée WR/PB sur les catégories run
-  const sumWRdivPB_weighted = runCats.reduce((sum, cat) => {
-    const WR = WRsByCat[cat] || 1;
-    const PB = player.ranks[cat].time || WR;
-    const weight = totalRunnersByCat[cat] || 1;
-    return sum + weight * (WR / PB);
-  }, 0);
-
-  const weightedMeanWRdivPB = sumR_total_i > 0 ? (sumWRdivPB_weighted / sumR_total_i) : 1;
-
-  // Nouveau coefficient : pénalisation plus forte pour peu de catégories
-  const coef = Math.pow(R_total_total / (sumR_total_i || 1), 1.15) * (1 / weightedMeanWRdivPB);
-
-  // Calcul du score final
-  for (const cat of categoryNames) {
-    const WR = WRsByCat[cat] || 1;
-    const weight = totalRunnersByCat[cat] || 1;
-    let PB;
-
-    if (player.ranks && player.ranks[cat]?.time != null) {
-      PB = player.ranks[cat].time;
-    } else {
-      PB = WR * coef; // pénalisation dynamique
-    }
-
-    const arg = Math.max(Math.min((WR / PB) - 1, 6), -6);
-    sumWeighted += weight * Math.exp(arg);
-    sumWeights += weight;
-  }
-
-  return sumWeights === 0 ? 0 : 100 * (sumWeighted / sumWeights);
-}
-
-
-
-
-function updateDisplay(filteredPlayers) {
-  list.innerHTML = filteredPlayers.map((p,index) => {
-    // Rank affiché
-    const rankValue = (() => {
-      if (!currentSortedCol) return p.globalRank; // <-- ici : rang global si rien sélectionné
-      if (currentSortedCol === "Rank (%)") return p.rankPercent.toFixed(2);
-      if (currentSortedCol === "Joueur") return p.globalRank;
-      return p.ranks?.[currentSortedCol]?.place ?? "-";
-    })();
-
-    const rankCell = `<td>${rankValue}</td>`;
-    const nameCell = `<td>${p.link ? `<a href="${p.link}" target="_blank">${p.name}</a>` : p.name}</td>`;
-    const rankCells = categoryNames.map(cat => {
-      const r = p.ranks[cat];
-      return r != null ? `<td class="${currentSortedCol===cat?'sorted':''}">${r.place}<br>${formatTime(r.time)}</td>` : `<td class="${currentSortedCol===cat?'sorted':''}">-</td>`;
-    }).join("");
-    const rankPercentCell = `<td>${p.rankPercent.toFixed(2)}</td>`;
-    return `<tr class="${index%2===0?'even':'odd'}">${rankCell}${nameCell}${rankCells}${rankPercentCell}</tr>`;
-  }).join("");
-}
-
-
-searchInput.addEventListener("input", () => {
-  const term = searchInput.value.toLowerCase();
-  const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
-  updateDisplay(filtered);
-  count.textContent = `${filtered.length} runners trouvés (${allPlayers.length} au total)`;
-});
-
-// Tri dynamique avec deselection
-document.querySelectorAll("thead th").forEach((th) => {
-  const colName = th.textContent.trim();
-  if (colName !== "Rank" && colName !== "Joueur") {
-    th.addEventListener("click", () => {
-      if (currentSortedCol === colName) {
-        currentSortedCol = null; // deselection -> Rank (%)
-      } else {
-        currentSortedCol = colName;
-      }
-
-      document.querySelectorAll("thead th").forEach(h=>h.classList.remove("sorted"));
-      if (currentSortedCol && currentSortedCol!=="Rank (%)") th.classList.add("sorted");
-
-      const term = searchInput.value.toLowerCase();
-      const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
-      filtered.sort((a,b) => {
-        if (!currentSortedCol || currentSortedCol === "Rank (%)") return b.rankPercent - a.rankPercent;
-        const ra = a.ranks?.[currentSortedCol]?.place ?? Infinity;
-        const rb = b.ranks?.[currentSortedCol]?.place ?? Infinity;
-        return ra - rb;
-      });
-      updateDisplay(filtered);
-    });
-  }
-});
-
-fetchPlayersWithRanks().catch(err => {
-  count.textContent = "Erreur : " + err.message;
-  console.error(err);
-});
-</script>
-
+<div id="compare-tray">
+  <div id="compare-slots">
+    <div class="slot" id="slot-1"><span>Player 1</span></div>
+    <div class="slot" id="slot-2"><span>Player 2</span></div>
+    <div class="slot" id="slot-3"><span>Player 3</span></div>
+    <div class="slot" id="slot-4"><span>Player 4</span></div>
+  </div>
+  <div id="compare-controls">
+    <button id="compare-run-btn" class="disabled" disabled>Compare (0)</button>
+    <button id="compare-clear-btn">Clear</button>
+  </div>
+</div>
+<div id="compare-modal-backdrop">
+  <div id="compare-modal-content">
+    <button id="compare-modal-close">&times;</button>
+    <h2>Player Comparison</h2>
+    <div id="compare-modal-body">
+      </div>
+  </div>
+</div>
+<script src="main.js"></script>
 </body>
 </html>
-
