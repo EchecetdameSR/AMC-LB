@@ -13,11 +13,17 @@
 <h2>All Main Categories - Leaderboard</H2>
 <div id="credit">by Echecetdame & Ram (Thx AI for the JS lul)</div>
 <div id="count"></div>
-<input id="search" type="text" placeholder="Search for a player…">
+<div class="controls-wrapper">
+  <input id="search" type="text" placeholder="Search for a player…">
+  
+  <select id="country-filter">
+    <option value="all">🌍 All Countries</option>
+    </select>
+</div>
 
-<button id="rankInfoBtn">How Rank (%) is Calculated</button>
+<button id="rankInfoBtn">How Score (%) is Calculated</button>
 <div id="rankInfoText">
-  <p><b>Rank (%)</b> measures a player's overall performance across all categories. It compares the player's <b>Personal Best (PB)</b> with the <b>World Record (WR)</b> in each category, weighted by the number of runners.</p>
+  <p><b>Score (%)</b> measures a player's overall performance across all categories. It compares the player's <b>Personal Best (PB)</b> with the <b>World Record (WR)</b> in each category, weighted by the number of runners.</p>
 
   <p><b>Categories played:</b></p>
   <pre>
@@ -46,7 +52,7 @@ penalty_i = (R_total_total / Σ_{j∈played} R_total_j) ×
 
   <p><b>Full formula:</b></p>
   <pre>
-Rank% = 100 × (Σ_i weight_i × exp((WR_i / PB_i_effective) - 1)) / Σ_i weight_i
+Score% = 100 × (Σ_i weight_i × exp((WR_i / PB_i_effective) - 1)) / Σ_i weight_i
 
 Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
   </pre>
@@ -54,11 +60,17 @@ Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
   <p>This system rewards players who are versatile, slightly penalizes skipped categories, and dynamically adapts to changes in WRs or runner numbers.</p>
 </div>
 <p></p>
-<table>
+<div class="toggle-switch">
+  <input type="checkbox" id="show-fictional-pb">
+  <label for="show-fictional-pb" class="toggle-label-switch"></label>
+  <label for="show-fictional-pb" class="toggle-label-text">Show Fictional PBs</label>
+</div>
+<p></p>
+<table id="main-leaderboard">
   <thead>
     <tr>
       <th class="non-clickable">Rank</th>
-      <th class="non-clickable">Player</th>
+      <th class="non-clickable" style="text-align: left; padding-left: 10px;">Player</th>
       <th class="non-clickable">Compare</th>
       <th>Any%</th>
       <th>All Dungeons</th>
@@ -71,7 +83,7 @@ Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
       <th>Master Sword & Dungeons</th>
       <th>Great Plateau Any%</th>
       <th>Great Plateau 100%</th>
-      <th class="non-clickable">Rank (%)</th>
+      <th class="non-clickable">Score (%)</th>
     </tr>
   </thead>
   <tbody id="list"></tbody>
@@ -85,6 +97,8 @@ Where PB_i_effective = PB_i if played, or PB_not_played_i if not played
   </div>
   <div id="compare-controls">
     <button id="compare-run-btn" class="disabled" disabled>Compare (0)</button>
+    <button id="compare-share-btn">Share</button>
+    <span id="share-confirm-msg">Copied!</span>
     <button id="compare-clear-btn">Clear</button>
   </div>
 </div>
