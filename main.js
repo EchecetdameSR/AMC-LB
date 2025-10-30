@@ -7,6 +7,7 @@ rankBtn.addEventListener("click", () => {
 const list = document.getElementById("list");
 const count = document.getElementById("count");
 const searchInput = document.getElementById("search");
+const countryFilter = document.getElementById("country-filter");
 
 const gameId = "76rqjqd8";
 
@@ -47,8 +48,8 @@ let allPlayers = [];
 let totalRunnersByCat = {};
 let WRsByCat = {};
 let currentSortedCol = null;
-
-let compareSlots = []; 
+let isUpdatingHash = false;
+let compareSlots = [];
 const playerColors = ['#00aaff', '#00bb88', '#ffaa00', '#ff4444'];
 const compareTray = document.getElementById('compare-tray');
 const slotElements = [
@@ -59,6 +60,8 @@ const slotElements = [
 ];
 const compareRunBtn = document.getElementById('compare-run-btn');
 const compareClearBtn = document.getElementById('compare-clear-btn');
+const compareShareBtn = document.getElementById('compare-share-btn');
+const shareConfirmMsg = document.getElementById('share-confirm-msg');
 const modalBackdrop = document.getElementById('compare-modal-backdrop');
 const modalBody = document.getElementById('compare-modal-body');
 const modalCloseBtn = document.getElementById('compare-modal-close');
@@ -96,7 +99,13 @@ async function fetchLeaderboard(catId, catName, playersMap, varId=null, valueId=
     const id = p.id;
     const name = p.names?.international || p.name || id;
     const link = p.weblink || (id ? `https://www.speedrun.com/user/${id}` : null);
-    playerLookup[id] = { name, link };
+    
+    let countryCode = p.location?.country?.code || null;
+    if (countryCode) {
+      countryCode = countryCode.split('/')[0].toLowerCase();
+    }
+    
+    playerLookup[id] = { name, link, countryCode };
   }
 
   for (const runEntry of catRuns) {
@@ -104,8 +113,8 @@ async function fetchLeaderboard(catId, catName, playersMap, varId=null, valueId=
     for (const p of runPlayers) {
       const id = p.id || "guest:" + (p.name || "unknown");
       if (!playersMap.has(id)) {
-        const info = playerLookup[id] || { name: p.name || id, link: p.weblink || null };
-        playersMap.set(id, { name: info.name, link: info.link, ranks: {} });
+        const info = playerLookup[id] || { name: p.name || id, link: p.weblink || null, countryCode: null };
+        playersMap.set(id, { name: info.name, link: info.link, ranks: {}, countryCode: info.countryCode });
       }
       const playerData = playersMap.get(id);
       if (!playerData.ranks[catName] && runEntry.place != null) {
@@ -113,8 +122,8 @@ async function fetchLeaderboard(catId, catName, playersMap, varId=null, valueId=
         playerData.ranks[catName] = { 
           place: runEntry.place, 
           time: run.times.primary_t,
-          video: run.videos?.links?.[0]?.uri || null, 
-          date: run.date || null 
+          video: run.videos?.links?.[0]?.uri || null,
+          date: run.date || null
         };
       }
     }
@@ -127,7 +136,7 @@ async function fetchPlayersWithRanks() {
   const loadingBarContainer = document.getElementById('loading-bar-container');
   const loadingBar = document.getElementById('loading-bar');
   
-  const totalFetches = 13; 
+  const totalFetches = 11; 
   let fetchesDone = 0;
   loadingBar.style.width = '0%';
   loadingBarContainer.style.opacity = '1';
@@ -156,29 +165,22 @@ async function fetchPlayersWithRanks() {
     ...data 
   }));
 
-  allPlayers.forEach(p => p.rankPercent = computeRankPercent(p));
-  allPlayers.sort((a,b) => b.rankPercent - a.rankPercent);
+  allPlayers.forEach(p => p.scorePercent = computeScorePercent(p));
+  allPlayers.sort((a,b) => b.scorePercent - a.scorePercent);
   allPlayers.forEach((p,i) => p.globalRank = i + 1);
 
   updateDisplay(allPlayers);
   count.textContent = `${allPlayers.length} runners found`;
+  
+  populateCountryFilter(allPlayers);
   
   loadingBar.style.width = '100%';
   setTimeout(() => { 
     loadingBarContainer.style.opacity = '0';
     setTimeout(() => { loadingBarContainer.style.display = 'none'; }, 500);
   }, 500);
+  readHashAndCompare();
 }
-
-fetchPlayersWithRanks().catch(err => {
-  count.textContent = "Error: " + err.message;
-  console.error(err);
-  
-  const loadingBarContainer = document.getElementById('loading-bar-container');
-  if (loadingBarContainer) {
-    loadingBarContainer.style.display = 'none';
-  }
-});
 
 function formatTime(seconds) {
   const hrs = Math.floor(seconds / 3600);
@@ -187,9 +189,11 @@ function formatTime(seconds) {
   return `${hrs.toString().padStart(2,"0")}:${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
 }
 
-function computeRankPercent(player) {
+function computeScorePercent(player) {
   let sumWeighted = 0;
   let sumWeights = 0;
+  
+  player.fictionalRanks = {};
 
   const R_total_total = Object.values(totalRunnersByCat).reduce((a, b) => a + b, 0);
 
@@ -215,7 +219,8 @@ function computeRankPercent(player) {
     if (player.ranks && player.ranks[cat]?.time != null) {
       PB = player.ranks[cat].time;
     } else {
-      PB = WR * coef; 
+      PB = WR * coef;
+      player.fictionalRanks[cat] = { time: PB };
     }
 
     const arg = Math.max(Math.min((WR / PB) - 1, 6), -6);
@@ -227,17 +232,19 @@ function computeRankPercent(player) {
 }
 
 function updateDisplay(filteredPlayers) {
-  list.innerHTML = filteredPlayers.map((p,index) => {
-    // Displayed Rank
-    const rankValue = (() => {
-      if (!currentSortedCol) return p.globalRank; 
-      if (currentSortedCol === "Rank (%)") return p.rankPercent.toFixed(2);
-      if (currentSortedCol === "Player") return p.globalRank;
-      return p.ranks?.[currentSortedCol]?.place ?? "-";
-    })();
+  const showFictional = document.getElementById('show-fictional-pb').checked;
 
-    const rankCell = `<td>${rankValue}</td>`;
-    const nameCell = `<td>${p.link ? `<a href="${p.link}" target="_blank">${p.name}</a>` : p.name}</td>`;
+  list.innerHTML = filteredPlayers.map((p,index) => {
+    const rankCell = `<td>${p.globalRank}</td>`;
+
+    let flagHtml = '';
+    if (p.countryCode) {
+
+      const flagUrl = `https://www.speedrun.com/images/flags/${p.countryCode.toLowerCase()}.png`;
+      flagHtml = `<img src="${flagUrl}" class="player-flag" alt="${p.countryCode}" title="${p.countryCode.toUpperCase()}"> `;
+    }
+    
+    const nameCell = `<td style="text-align: left; padding-left: 10px;">${flagHtml}${p.link ? `<a href="${p.link}" target="_blank">${p.name}</a>` : p.name}</td>`;
     
     let btnClass = 'compare-btn';
     if (compareSlots.includes(p.id)) btnClass += ' selected';
@@ -245,51 +252,113 @@ function updateDisplay(filteredPlayers) {
     
     const rankCells = categoryNames.map(cat => {
       const r = p.ranks[cat];
-      return r != null ? `<td class="${currentSortedCol===cat?'sorted':''}">${r.place}<br>${formatTime(r.time)}</td>` : `<td class="${currentSortedCol===cat?'sorted':''}">-</td>`;
+      const fr = p.fictionalRanks[cat];
+
+      if (r != null) {
+        return `<td class="${currentSortedCol===cat?'sorted':''}">${r.place}<br>${formatTime(r.time)}</td>`;
+      
+      } else if (showFictional && fr != null) {
+        return `<td class="${currentSortedCol===cat?'sorted':''}" style="opacity: 0.6; font-style: italic; color: #aaa;">
+                  N/A<br>${formatTime(fr.time)}
+                </td>`;
+      
+      } else {
+        return `<td class="${currentSortedCol===cat?'sorted':''}">-</td>`;
+      }
     }).join("");
-    const rankPercentCell = `<td>${p.rankPercent.toFixed(2)}</td>`;
+
+    const scorePercentCell = `<td>${p.scorePercent.toFixed(2)}</td>`;
     
-    return `<tr class="${index%2===0?'even':'odd'}" data-player-id="${p.id}">${rankCell}${nameCell}${compareCell}${rankCells}${rankPercentCell}</tr>`;
+    return `<tr class="${index%2===0?'even':'odd'}" data-player-id="${p.id}">${rankCell}${nameCell}${compareCell}${rankCells}${scorePercentCell}</tr>`;
   }).join("");
 }
 
-searchInput.addEventListener("input", () => {
-  const term = searchInput.value.toLowerCase();
-  const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
-  updateDisplay(filtered);
-  count.textContent = `${filtered.length} runners found (${allPlayers.length} total)`;
-});
+function populateCountryFilter(players) {
+  const countrySet = new Set();
+  players.forEach(p => {
+    if (p.countryCode) {
+      countrySet.add(p.countryCode);
+    }
+  });
 
-document.querySelectorAll("thead th").forEach((th) => {
+  const sortedCountries = [...countrySet].sort();
+  
+  sortedCountries.forEach(code => {
+    const option = document.createElement('option');
+    option.value = code;
+    option.textContent = code.toUpperCase();
+    countryFilter.appendChild(option);
+  });
+}
+
+function applyFiltersAndRender() {
+  const term = searchInput.value.toLowerCase();
+  const country = countryFilter.value;
+  const showFictional = document.getElementById('show-fictional-pb').checked;
+
+  let filteredPlayers = allPlayers;
+
+  if (term) {
+    filteredPlayers = filteredPlayers.filter(p => p.name.toLowerCase().includes(term));
+  }
+
+  if (country !== 'all') {
+    filteredPlayers = filteredPlayers.filter(p => p.countryCode === country);
+  }
+
+  filteredPlayers.sort((a,b) => {
+    if (!currentSortedCol || currentSortedCol === "Score (%)") {
+      return b.scorePercent - a.scorePercent;
+    }
+    
+    const ra_real = a.ranks?.[currentSortedCol];
+    const rb_real = b.ranks?.[currentSortedCol];
+    const ra_fictional = showFictional ? a.fictionalRanks?.[currentSortedCol] : null;
+    const rb_fictional = showFictional ? b.fictionalRanks?.[currentSortedCol] : null;
+
+    const timeA = ra_real?.time ?? ra_fictional?.time ?? Infinity;
+    const timeB = rb_real?.time ?? rb_fictional?.time ?? Infinity;
+
+    if (timeA !== Infinity || timeB !== Infinity) {
+        return timeA - timeB;
+    }
+    return b.scorePercent - a.scorePercent;
+  });
+
+  updateDisplay(filteredPlayers);
+
+  count.textContent = `${filteredPlayers.length} runners found (${allPlayers.length} total)`;
+}
+
+searchInput.addEventListener("input", applyFiltersAndRender);
+
+document.querySelectorAll("#main-leaderboard > thead th").forEach((th) => {
   const colName = th.textContent.trim();
-  if (colName !== "Rank" && colName !== "Player" && colName !== "Compare") {
+  if (colName !== "Rank" && colName !== "Player" && colName !== "Compare" && colName !== "Score (%)") {
     th.addEventListener("click", () => {
       if (currentSortedCol === colName) {
-        currentSortedCol = null; 
+        currentSortedCol = null;
       } else {
         currentSortedCol = colName;
       }
 
       document.querySelectorAll("thead th").forEach(h=>h.classList.remove("sorted"));
-      if (currentSortedCol && currentSortedCol!=="Rank (%)") th.classList.add("sorted");
+      if (currentSortedCol) th.classList.add("sorted");
 
-      const term = searchInput.value.toLowerCase();
-      const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
-      filtered.sort((a,b) => {
-        if (!currentSortedCol || currentSortedCol === "Rank (%)") return b.rankPercent - a.rankPercent;
-        const ra = a.ranks?.[currentSortedCol]?.place ?? Infinity;
-        const rb = b.ranks?.[currentSortedCol]?.place ?? Infinity;
-        return ra - rb;
-      });
-      updateDisplay(filtered);
+      applyFiltersAndRender();
     });
   }
 });
 
-let currentlyOpenRow = null; 
+document.getElementById('show-fictional-pb').addEventListener('change', applyFiltersAndRender);
+
+countryFilter.addEventListener('change', applyFiltersAndRender);
+
+let currentlyOpenRow = null;
 
 function generateDetailsHtml(player) {
   let pbListHtml = '<div class="details-pb-list"><h3>Personal Bests</h3>';
+  
   const playedCategories = categoryNames.map(cat => ({
     name: cat,
     run: player.ranks[cat]
@@ -327,7 +396,7 @@ function generateDetailsHtml(player) {
   return `<div class="details-content">${pbListHtml}</div>`;
 }
 
-list.addEventListener('click', (e) => {
+  list.addEventListener('click', (e) => {
   if (e.target.tagName === 'A') {
     return;
   }
@@ -335,12 +404,18 @@ list.addEventListener('click', (e) => {
   const compareBtn = e.target.closest('.compare-btn');
   if (compareBtn) {
     const playerId = compareBtn.dataset.playerId;
-    addToCompare(playerId);
-    return;
+    
+    if (compareSlots.includes(playerId)) {
+      removeFromCompare(playerId);
+    } else {
+      addToCompare(playerId);
+    }
+    return; 
   }
 
   const clickedRow = e.target.closest('tr');
   if (!clickedRow || clickedRow.classList.contains('details-row')) return;
+
   if (currentlyOpenRow) {
     currentlyOpenRow.trigger.classList.remove('active-row');
     currentlyOpenRow.details.remove();
@@ -361,7 +436,7 @@ list.addEventListener('click', (e) => {
   detailsRow.className = 'details-row';
   
   const detailsCell = document.createElement('td');
-  const numCols = clickedRow.cells.length; 
+  const numCols = clickedRow.cells.length;
   detailsCell.colSpan = numCols;
   
   detailsCell.innerHTML = generateDetailsHtml(player);
@@ -371,17 +446,17 @@ list.addEventListener('click', (e) => {
   clickedRow.after(detailsRow);
 
   currentlyOpenRow = {
-    trigger: clickedRow, 
-    details: detailsRow  
+    trigger: clickedRow,
+    details: detailsRow
   };
 });
 
 function getCompareColor(index, light = false) {
   const colors = [
-    { main: '#00aaff', light: '#00aaff' }, // P1 
-    { main: '#00bb88', light: '#00bb88' }, // P2 
-    { main: '#ffaa00', light: '#ffaa00' }, // P3 
-    { main: '#ff4444', light: '#ff4444' }  // P4 
+    { main: '#00aaff', light: '#00aaff' },
+    { main: '#00bb88', light: '#00bb88' },
+    { main: '#ffaa00', light: '#ffaa00' },
+    { main: '#ff4444', light: '#ff4444ff' }
   ];
   return colors[index] ? (light ? colors[index].light : colors[index].main) : '#888';
 }
@@ -398,7 +473,7 @@ function addToCompare(playerId) {
     compareSlots.push(playerId);
   } else {
     console.warn("Compare tray is full.");
-    return; 
+    return;
   }
   
   updateCompareTray();
@@ -415,6 +490,11 @@ function clearCompare() {
   compareSlots = [];
   updateCompareTray();
   updateCompareButtonsInTable();
+  updateCompareTray();
+  updateCompareButtonsInTable();
+  
+  if (isUpdatingHash) return;
+  history.replaceState(null, '', window.location.pathname); 
 }
 
 function updateCompareButtonsInTable() {
@@ -462,6 +542,19 @@ function updateCompareTray() {
     compareRunBtn.classList.add('disabled');
     compareRunBtn.disabled = true;
   }
+
+  if (count >= 2) {
+    compareRunBtn.classList.remove('disabled');
+    compareRunBtn.disabled = false;
+  } else {
+    compareRunBtn.classList.add('disabled');
+    compareRunBtn.disabled = true;
+  }
+  
+  if (isUpdatingHash) return; 
+  const hash = compareSlots.join(',');
+  history.replaceState(null, '', '#' + hash);
+
 }
 
 function showCompareModal() {
@@ -481,6 +574,7 @@ function showCompareModal() {
 
 function generateCompareHtml(players) {
   let playerHeaders = players.map((p, i) => `<th class="p${i+1}-color">${p.name}</th>`).join('');
+  
   let statsHtml = `
     <h3>General Stats</h3>
     <table class="compare-stats">
@@ -496,8 +590,8 @@ function generateCompareHtml(players) {
           ${players.map(p => `<td>${p.globalRank}</td>`).join('')}
         </tr>
         <tr>
-          <td>Rank (%)</td>
-          ${players.map(p => `<td>${p.rankPercent.toFixed(2)}%</td>`).join('')}
+          <td>Score (%)</td>
+          ${players.map(p => `<td>${p.scorePercent.toFixed(2)}%</td>`).join('')}
         </tr>
       </tbody>
     </table>`;
@@ -517,7 +611,7 @@ function generateCompareHtml(players) {
       if (time === Infinity) return '<td>-</td>';
       
       let cssClass = '';
-      let diffHtml = ''; 
+      let diffHtml = '';
       
       if (time === minTime) {
         cssClass = 'stat-winner';
@@ -551,15 +645,16 @@ function generateCompareHtml(players) {
 function generateRadarChart(players) {
   const size = 600; 
   const center = size / 2;
-  const radius = size * 0.25;
+  const radius = size * 0.28;
   const numCats = categoryNames.length;
   const angleSlice = (Math.PI * 2) / numCats;
-  const angleOffset = -Math.PI / 2; 
+  const angleOffset = -Math.PI / 2;
+
   const chartLabels = [
     ["Any%"],
     ["All", "Dungeons"],
     ["All Main", "Quests"],
-    ["All", "Shrines"],
+    ["All Shrines"],
     ["100%"],
     ["Best Ending"],
     ["Master Sword"],
@@ -592,23 +687,22 @@ function generateRadarChart(players) {
     const y2 = center + radius * Math.sin(angle);
     svg += `<line class="radar-spoke" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
     
-    const labelRadius = radius * 1.45;
+    const labelRadius = radius * 1.35;
     const lx = center + labelRadius * Math.cos(angle);
     const ly = center + labelRadius * Math.sin(angle);
     
     let textAnchor = "middle";
-    const epsilon = 0.1; 
+    const epsilon = 0.1;
     
     if (angle > -Math.PI / 2 + epsilon && angle < Math.PI / 2 - epsilon) {
       textAnchor = "start";
     }
-
     else if (angle < -Math.PI / 2 - epsilon || angle > Math.PI / 2 + epsilon) {
       textAnchor = "end";
     }
-
+    
     const labelLines = chartLabels[i];
-    const pxLineHeight = 16; 
+    const pxLineHeight = 16;
     
     const initialDY = 5 - ((labelLines.length - 1) * pxLineHeight / 2);
 
@@ -630,9 +724,9 @@ function generateRadarChart(players) {
       const wr = WRsByCat[cat] || 1;
       const pb = player.ranks[cat]?.time;
       
-      let score = 0; 
+      let score = 0;
       if (pb) {
-        score = Math.max(0, Math.min(1, wr / pb)); 
+        score = Math.max(0, Math.min(1, wr / pb));
       }
       
       const dataRadius = radius * score;
@@ -653,7 +747,7 @@ function generateRadarChart(players) {
   });
 
   svg += `</svg>`;
-
+  
   let legendHtml = `<div class="radar-legend">`;
   players.forEach((player, pIndex) => {
     const color = getCompareColor(pIndex);
@@ -673,7 +767,7 @@ modalCloseBtn.addEventListener('click', () => {
   modalBackdrop.style.display = 'none';
 });
 modalBackdrop.addEventListener('click', (e) => {
-  if (e.target === modalBackdrop) { 
+  if (e.target === modalBackdrop) {
     modalBackdrop.style.display = 'none';
   }
 });
@@ -685,7 +779,57 @@ compareTray.addEventListener('click', (e) => {
   }
 });
 
+function readHashAndCompare() {
+  isUpdatingHash = true; 
+  try {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const playerIds = hash.split(',');
+      
+      compareSlots = []; 
+      
+      playerIds.forEach(id => {
+        if (allPlayers.some(p => p.id === id)) {
+          if (compareSlots.length < 4 && !compareSlots.includes(id)) {
+            compareSlots.push(id);
+          }
+        }
+      });
+      updateCompareTray(); 
+      updateCompareButtonsInTable(); 
+    }
+  } catch (e) {
+    console.error("Error reading hash:", e);
+  }
+  isUpdatingHash = false; 
+}
+
+window.addEventListener('hashchange', readHashAndCompare);
+
+compareShareBtn.addEventListener('click', () => {
+  const urlToCopy = window.location.href;
+  
+  navigator.clipboard.writeText(urlToCopy).then(() => {
+    // Succès de la copie
+    compareShareBtn.style.display = 'none'; 
+    shareConfirmMsg.style.display = 'inline-block'; 
+    setTimeout(() => {
+      shareConfirmMsg.style.display = 'none'; 
+      compareShareBtn.style.display = 'inline-block'; 
+    }, 2000); 
+    
+  }).catch(err => {
+    console.error('Failed to copy URL: ', err);
+    alert('Failed to copy URL. Please copy it manually.');
+  });
+});
+
 fetchPlayersWithRanks().catch(err => {
   count.textContent = "Error: " + err.message;
   console.error(err);
+  
+  const loadingBarContainer = document.getElementById('loading-bar-container');
+  if (loadingBarContainer) {
+    loadingBarContainer.style.display = 'none';
+  }
 });
